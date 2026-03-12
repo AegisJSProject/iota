@@ -50,7 +50,7 @@ npm install @aegisjsproject/iota
 <script type="importmap">
   "imports": {
     "@shgysk8zer0/signals": "https://unpkg.com/@shgysk8zer0/signals@0.0.3/signals.js,
-    "@aegisjsproject/iota": "https://unpkg.com/@aegisjsproject/iota/iota.js"
+    "@aegisjsproject/iota": "https://unpkg.com/@aegisjsproject/iota@1.0.1/iota.js"
   }
 </script>
 ```
