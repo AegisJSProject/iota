@@ -1,23 +1,17 @@
 import terser from '@rollup/plugin-terser';
+import nodeResolve from '@rollup/plugin-node-resolve';
 
 export default [{
-	input: 'index.js',
+	input: 'iota.js',
+	plugins: [nodeResolve()],
+	external: ['@shgysk8zer0/signals'],
 	output: [{
-		file: 'index.cjs',
+		file: 'iota.cjs',
 		format: 'cjs',
 	}, {
-		file: 'index.min.js',
-		format: 'iife',
+		file: 'iota.min.js',
+		format: 'module',
 		plugins: [terser()],
 		sourcemap: true,
-	}, {
-		file: 'index.mjs',
-		format: 'module',
 	}],
-}, {
-	input: 'consts.js',
-	output: {
-		file: 'consts.cjs',
-		format: 'cjs',
-	}
 }];

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html id="root" lang="en" dir="ltr">
 	<head>
 		<title>NPM Template</title>
 		<meta charset="utf-8" />
@@ -8,6 +8,7 @@
 		<link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any" />
 		<script type="importmap" integrity="{{ INTEGRITY }}">{{ IMPORTMAP }}</script>
 		<script src="{{ POLYFILLS }}" referrerpolicy="no-referrer" crossorigin="anonymous" defer=""></script>
+		<script src="/index.js" type="module" referrerpolicy="no-referrer"></script>
 	</head>
 	<body>
 		<header id="header">
@@ -15,13 +16,13 @@
 		</header>
 		<nav id="nav"></nav>
 		<main id="main">
-			<details>
+			<details name="section">
 				<summary>Request</summary>
 				<pre>
 					<code>{{ REQUEST }}</code>
 				</pre>
 			</details>
-			<details>
+			<details name="section">
 				<summary>Context</summary>
 				<pre>
 					<code>{{ CONTEXT }}</code>
