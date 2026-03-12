@@ -4,7 +4,7 @@ export class RegistryKey extends String {
 	#stack = new DisposableStack();
 
 	get disposed() {
-		return this.#stack.diposed;
+		return this.#stack.disposed;
 	}
 
 	adopt(what, onDiposed) {
