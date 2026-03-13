@@ -2,6 +2,8 @@ import { Signal } from '@shgysk8zer0/signals';
 import { hasSignalRef, getSignalFromRef } from './registry.js';
 import { SIGNAL_DATA_ATTR } from './attr.js';
 
+const ATTR_OWNER_KEY = Symbol('Attr:owner');
+
 const noop = () => undefined;
 /**
  * @type {boolean}
@@ -36,6 +38,13 @@ let updating = false;
  * @param {T} value
  * @param {SignalObserverParams} params
  * @returns {void}
+ */
+
+/**
+ * @typedef ObserverConfigObject
+ * @property {DisposableStack|AsyncDisposable} [stack]
+ * @property {AbortSignal} [signal]
+ * @property {DocumentOrShadowRoot} [base=document]
  */
 
 /**
@@ -137,7 +146,12 @@ export function unwatchSignalCallback(signal, callback) {
 	}
 }
 
-
+/**
+ *
+ * @param @param {DocumentOrShadowRoot|Element|DocumentFragment|string} [root=document.body]
+ * @param {ObserverConfigObject} [config]
+ * @returns {DocumentOrShadowRoot|Element|DocumentFragment}
+ */
 export function observeTextSignalRefs(root = document.body, { stack, signal, base = document } = {}) {
 	if (typeof root === 'string') {
 		return observeTextSignalRefs(base.getElementById(root), { stack, signal });
@@ -163,6 +177,12 @@ export function observeTextSignalRefs(root = document.body, { stack, signal, bas
 	}
 }
 
+/**
+ *
+ * @param {DocumentOrShadowRoot|Element|DocumentFragment|string} [root=document.body]
+ * @param {ObserverConfigObject} [config]
+ * @returns {DocumentOrShadowRoot|Element|DocumentFragment}
+ */
 export function observeAttrSignalRefs(root = document.body, { stack, signal, base = document } = {}) {
 	if (typeof root === 'string') {
 		return observeAttrSignalRefs(base.getElementById(root), { stack, signal });
@@ -175,10 +195,28 @@ export function observeAttrSignalRefs(root = document.body, { stack, signal, bas
 			if (hasSignalRef(key)) {
 				const sig = getSignalFromRef(key);
 				const attr = root.ownerDocument.createAttribute(sig.name);
-				attr.value = sig.get();
-				el.setAttributeNode(attr);
+				const val = sig.get();
+
+				if (val !== false) {
+					attr.value = sig.get();
+					el.setAttributeNode(attr);
+				}
+
+				Object.defineProperty(attr, ATTR_OWNER_KEY, { value: el, enumerable: false, writable: false, configurable: false });
 				el.removeAttribute(SIGNAL_DATA_ATTR);
-				watchSignal(sig, newVal => attr.value = newVal);
+
+				watchSignal(sig, newVal => {
+					if (typeof newVal === 'boolean') {
+						attr[ATTR_OWNER_KEY].toggleAttribute(attr.name, newVal);
+					} else {
+						attr.value = newVal;
+
+						if (! (attr.ownerElement instanceof Element)) {
+							attr[ATTR_OWNER_KEY].setAttributeNode(attr);
+						}
+					}
+				});
+
 				stack?.defer?.(sig[Symbol.dispose]?.bind?.(sig));
 				signal?.addEventListener?.('abort', sig[Symbol.dispose]?.bind?.(sig), { once: true });
 			}
@@ -188,6 +226,12 @@ export function observeAttrSignalRefs(root = document.body, { stack, signal, bas
 	return root;
 }
 
+/**
+ *
+ * @param {DocumentOrShadowRoot|Element|DocumentFragment|string} [root=document.body]
+ * @param {ObserverConfigObject} [config]
+ * @returns {DocumentOrShadowRoot}
+ */
 export function observeSignalRefs(root = document.body, { stack, signal, base = document } = {}) {
 	if (typeof root === 'string') {
 		return observeSignalRefs(base.getElementById(root), { stack, signal });
@@ -199,3 +243,26 @@ export function observeSignalRefs(root = document.body, { stack, signal, base = 
 }
 
 export const $observe = observeSignalRefs;
+
+/**
+ *
+ * @param {Element|DocumentFragment} content
+ * @param {string|Element|DocumentFragment|DocumentOrShadowRoot} target
+ * @param {ObserverConfigObject} config
+ * @returns {Element|DocumentFragment}
+ */
+export function $render(content, target, { stack, signal, base = document } = {}) {
+	if (content instanceof HTMLTemplateElement) {
+		return $render(content.content.cloneNode(true), target, { stack, signal, base });
+	} else if (typeof target === 'string') {
+		return $render(content, base.getElementById(target), { stack, signal, base });
+	} else if (! (target instanceof Element || target instanceof DocumentFragment || target instanceof ShadowRoot)) {
+		throw new TypeError('Target must be an element or an ID.');
+	} else if (! (content instanceof Element || content instanceof DocumentFragment)) {
+		throw new TypeError('Content must be an Element or DocumentFragment.');
+	} else {
+		$observe(content, { stack, signal });
+		target.replaceChildren(content);
+		return content;
+	}
+}

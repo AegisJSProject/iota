@@ -3,7 +3,7 @@ export { registerSignal, getSignalFromRef, hasSignalRef, unregisterSignal } from
 export { DisposableComputed, DisposableState, $computed, $signal } from './disposable.js';
 export {
 	watchSignal, unwatchSignal, unwatchSignalCallback, observeAttrSignalRefs, observeSignalRefs,
-	observeTextSignalRefs, $watch, $unwatch, $observe,
+	observeTextSignalRefs, $watch, $unwatch, $observe, $render,
 } from './watcher.js';
 export { TextComputed, TextState, $text } from './text.js';
 export { AttrComputed, AttrState, $attr } from './attr.js';

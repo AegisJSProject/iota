@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.2] - 2026-03-13
+
+### Added
+- Add support for boolean attributes
+- Add `$render()` (observer & replace children of target)
+
 ## [v1.0.1] - 2026-03-11
 
 ### Added
