@@ -1,6 +1,6 @@
 {
   "name": "@aegisjsproject/iota",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Signals-based reactivity library",
   "keywords": [
     "signals",
@@ -76,6 +76,7 @@
   },
   "homepage": "https://github.com/AegisJSProject/iota#readme",
   "dependencies": {
+    "@aegisjsproject/escape": "^1.0.4",
     "@shgysk8zer0/signals": "^0.0.3"
   },
   "devDependencies": {
@@ -84,7 +85,7 @@
     "@rollup/plugin-terser": "^1.0.0",
     "@shgysk8zer0/eslint-config": "^1.0.7",
     "@shgysk8zer0/http-server": "^1.1.1",
-    "@shgysk8zer0/importmap": "^1.8.2",
+    "@shgysk8zer0/importmap": "^1.8.3",
     "eslint": "^10.0.3",
     "rollup": "^4.59.0"
   }
