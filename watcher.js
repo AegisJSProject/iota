@@ -1,6 +1,6 @@
 import { Signal } from '@shgysk8zer0/signals';
 import { hasSignalRef, getSignalFromRef } from './registry.js';
-import { SIGNAL_DATA_ATTR } from './attr.js';
+import { SIGNAL_DATA_ATTR_SELECTOR, SIGNAL_DATA_ATTR } from './attr.js';
 
 const ATTR_OWNER_KEY = Symbol('Attr:owner');
 
@@ -52,7 +52,6 @@ let updating = false;
  * @type {WeakMap<AnySignal<T>, Set<SignalObserverCallback<T>>>}
  */
 const registry = new WeakMap();
-
 /**
  * @type {Signal.subtle.Watcher}
  */
@@ -187,7 +186,7 @@ export function observeAttrSignalRefs(root = document.body, { stack, signal, bas
 	if (typeof root === 'string') {
 		return observeAttrSignalRefs(base.getElementById(root), { stack, signal });
 	} else {
-		const els = root.querySelectorAll(`[${SIGNAL_DATA_ATTR}]`);
+		const els = root.querySelectorAll(SIGNAL_DATA_ATTR_SELECTOR);
 
 		for (const el of els) {
 			const key = el.dataset.attrSignal;
@@ -198,7 +197,9 @@ export function observeAttrSignalRefs(root = document.body, { stack, signal, bas
 				const val = sig.get();
 
 				if (val !== false) {
-					attr.value = sig.get();
+					const val = sig.get();
+					attr.value = Array.isArray(val) ? val.join(' ') : val;
+					console.log(attr);
 					el.setAttributeNode(attr);
 				}
 
@@ -208,6 +209,12 @@ export function observeAttrSignalRefs(root = document.body, { stack, signal, bas
 				watchSignal(sig, newVal => {
 					if (typeof newVal === 'boolean') {
 						attr[ATTR_OWNER_KEY].toggleAttribute(attr.name, newVal);
+					} else if (Array.isArray(newVal)) {
+						attr.value = newVal.join(' ');
+
+						if (! (attr.ownerElement instanceof Element)) {
+							attr[ATTR_OWNER_KEY].setAttributeNode(attr);
+						}
 					} else {
 						attr.value = newVal;
 
@@ -266,3 +273,20 @@ export function $render(content, target, { stack, signal, base = document } = {}
 		return content;
 	}
 }
+
+export const $sources = signal => Signal.subtle.introspectSources(signal);
+
+export const $sinks = signal => Signal.subtle.introspectSinks(signal);
+
+/**
+ * Reads a Signal without tracking it
+ * @template T
+ * @param {Signal.State<T>|Signal.Computed<T>} signal
+ * @returns {T}
+ */
+export const $peek = signal => Signal.subtle.untrack(() => signal.get());
+
+export const $log = (...signals) =>
+	Signal.subtle.untrack(() =>
+		console.log(...signals.map(signal => signal.get()))
+	);
