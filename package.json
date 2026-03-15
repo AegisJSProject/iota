@@ -1,6 +1,6 @@
 {
   "name": "@aegisjsproject/iota",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A Signals-based reactivity library",
   "keywords": [
     "signals",
@@ -46,6 +46,7 @@
     "fix:js": "eslint . --fix",
     "build": "npm run build:js",
     "run:tests": "node --test",
+    "jsdoc": "jsdoc ./ -r -d ./docs",
     "clean": "rm -f ./*.cjs",
     "build:js": "npm run clean && rollup -c rollup.config.js",
     "create:lock": "npm i --package-lock-only --ignore-scripts --no-audit --no-fund",
@@ -83,7 +84,7 @@
     "@rollup/plugin-terser": "^1.0.0",
     "@shgysk8zer0/eslint-config": "^1.0.7",
     "@shgysk8zer0/http-server": "^1.1.1",
-    "@shgysk8zer0/importmap": "^1.8.1",
+    "@shgysk8zer0/importmap": "^1.8.2",
     "eslint": "^10.0.3",
     "rollup": "^4.59.0"
   }
