@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.5] - 2026-03-15
+
+### Fixed
+- Fixed binding to state (`$text()`) using of an empty string
+
 ## [v1.0.4] - 2026-03-15
 
 ### Changed
