@@ -15,7 +15,7 @@ document.adoptedStyleSheets = [properties, theme, misc, forms, btn];
 const stack = new DisposableStack();
 const controller = stack.adopt(new AbortController(), controller => controller.abort());
 const signal = registerSignal(controller.signal);
-const $name = stack.use($text('Silly person'));
+const $name = stack.use($text('Silly person <script>alert("1")</script>'));
 const $nameAttr = stack.use($data('user-name', () => $name.get()));
 const $isHidden = stack.use($hidden(false));
 const $desc = stack.use($aria('description', () => `Description for ${$name.get()}.`));

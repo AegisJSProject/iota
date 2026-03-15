@@ -1,7 +1,6 @@
+import { escapeHTML } from '@aegisjsproject/escape/html.js';
 import { DisposableComputed, DisposableState } from './disposable.js';
-
-export const SIGNAL_DATA_ATTR = 'data-attr-signal';
-export const SIGNAL_DATA_ATTR_SELECTOR = `[${SIGNAL_DATA_ATTR}]`;
+import { SIGNAL_DATA_ATTR } from './consts.js';
 
 export class AttrState extends DisposableState {
 	#name;
@@ -25,7 +24,15 @@ export class AttrState extends DisposableState {
 	}
 
 	toString() {
-		return `${SIGNAL_DATA_ATTR}="${this.ref}"`;
+		const val = this.get();
+
+		if (Array.isArray(val)) {
+			return `${SIGNAL_DATA_ATTR}="${this.ref}" ${this.#name}="${escapeHTML(val.join(' '))}"`;
+		} else if (val === false) {
+			return `${SIGNAL_DATA_ATTR}="${this.ref}"`;
+		} else {
+			return `${SIGNAL_DATA_ATTR}="${this.ref}" ${this.#name}="${escapeHTML(val)}"`;
+		}
 	}
 }
 
@@ -50,7 +57,15 @@ export class AttrComputed extends DisposableComputed {
 	}
 
 	toString() {
-		return `${SIGNAL_DATA_ATTR}="${this.ref}"`;
+		const val = this.get();
+
+		if (Array.isArray(val)) {
+			return `${SIGNAL_DATA_ATTR}="${this.ref}" ${this.#name}="${escapeHTML(val.join(' '))}"`;
+		} else if (val === false) {
+			return `${SIGNAL_DATA_ATTR}="${this.ref}"`;
+		} else {
+			return `${SIGNAL_DATA_ATTR}="${this.ref}" ${this.#name}="${escapeHTML(val)}"`;
+		}
 	}
 }
 

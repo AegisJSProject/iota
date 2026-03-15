@@ -1,6 +1,6 @@
 import { Signal } from '@shgysk8zer0/signals';
 import { hasSignalRef, getSignalFromRef } from './registry.js';
-import { SIGNAL_DATA_ATTR_SELECTOR, SIGNAL_DATA_ATTR } from './attr.js';
+import { SIGNAL_DATA_ATTR_SELECTOR, SIGNAL_DATA_ATTR } from './consts.js';
 
 const ATTR_OWNER_KEY = Symbol('Attr:owner');
 
@@ -158,15 +158,21 @@ export function observeTextSignalRefs(root = document.body, { stack, signal, bas
 		const it = root.ownerDocument.createNodeIterator(
 			root,
 			NodeFilter.SHOW_COMMENT,
-			comment => hasSignalRef(comment.textContent.trim()) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT
+			comment => hasSignalRef(comment.textContent)
+				&& comment.nextSibling?.nodeType === Node.TEXT_NODE
+				&& comment.nextSibling.nextSibling?.nodeType === Node.COMMENT_NODE
+				? NodeFilter.FILTER_ACCEPT
+				: NodeFilter.FILTER_REJECT
 		);
 
 		let comment;
 
 		while ((comment = it.nextNode())) {
 			const sig = getSignalFromRef(comment.textContent.trim());
-			const textNode = root.ownerDocument.createTextNode(sig.get());
-			comment.parentElement.replaceChild(textNode, comment);
+			// Get the text node between the comments & remove the surrounding comments
+			const textNode = comment.nextSibling;
+			textNode.nextSibling.remove();
+			comment.remove();
 			watchSignal(sig, text => textNode.textContent = text);
 			stack?.defer?.(sig[Symbol.dispose]?.bind?.(sig));
 			signal?.addEventListener?.('abort',sig[Symbol.dispose]?.bind?.(sig), { once: true });
@@ -193,15 +199,7 @@ export function observeAttrSignalRefs(root = document.body, { stack, signal, bas
 
 			if (hasSignalRef(key)) {
 				const sig = getSignalFromRef(key);
-				const attr = root.ownerDocument.createAttribute(sig.name);
-				const val = sig.get();
-
-				if (val !== false) {
-					const val = sig.get();
-					attr.value = Array.isArray(val) ? val.join(' ') : val;
-					console.log(attr);
-					el.setAttributeNode(attr);
-				}
+				const attr = el.hasAttribute(sig.name) ? el.getAttributeNode(sig.name) : root.ownerDocument.createAttribute(sig.name);
 
 				Object.defineProperty(attr, ATTR_OWNER_KEY, { value: el, enumerable: false, writable: false, configurable: false });
 				el.removeAttribute(SIGNAL_DATA_ATTR);
