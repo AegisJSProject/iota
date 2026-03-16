@@ -10,3 +10,4 @@ export {
 	AttrComputed, AttrState, $attr, $checked, $classList, $disabled, $hidden, $inert, $muted,
 	$open, $readOnly, $requried, $selected, $value, $data, $aria,
 } from './attr.js';
+export { IotaElement } from './iota-element.js';
