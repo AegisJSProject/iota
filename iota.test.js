@@ -2,16 +2,11 @@ import '@shgysk8zer0/polyfills';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-	getRef,
-	RegistryKey,
-	hasSignalRef,
-	getSignalFromRef,
-	unregisterSignal,
-	$signal,
-	$computed,
-	$watch,
-	$unwatch
-} from '@aegisjsproject/iota';
+	getRef, RegistryKey,
+} from './refs.js';
+import { hasSignalRef, getSignalFromRef, unregisterSignal } from './registry.js';
+import { $signal, $computed } from './disposable.js';
+import { $watch, $unwatch } from './watcher.js';
 
 test('RegistryKey generation and disposal', () => {
 	const key = getRef('test');

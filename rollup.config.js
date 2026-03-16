@@ -1,10 +1,10 @@
 import terser from '@rollup/plugin-terser';
 import nodeResolve from '@rollup/plugin-node-resolve';
-
+const external = ['@shgysk8zer0/signal', '@aegisjsproject/core/parsers/html.js', '@aegisjsproject/core/parsers/css.js'];
 export default [{
 	input: 'iota.js',
 	plugins: [nodeResolve()],
-	external: ['@shgysk8zer0/signals'],
+	external,
 	output: [{
 		file: 'iota.cjs',
 		format: 'cjs',
