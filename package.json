@@ -1,6 +1,6 @@
 {
   "name": "@aegisjsproject/iota",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A Signals-based reactivity library",
   "keywords": [
     "signals",

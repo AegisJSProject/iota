@@ -1,6 +1,6 @@
 export { getRef, RegistryKey, $ref } from './refs.js';
 export { registerSignal, getSignalFromRef, hasSignalRef, unregisterSignal } from './registry.js';
-export { DisposableComputed, DisposableState, $computed, $signal } from './disposable.js';
+export { DisposableComputed, DisposableState, $computed, $state, $signal, $proxy, createSignalProxy } from './disposable.js';
 export {
 	watchSignal, unwatchSignal, unwatchSignalCallback, observeAttrSignalRefs, observeSignalRefs,
 	observeTextSignalRefs, $watch, $unwatch, $observe, $render, $peek, $log, $sources, $sinks,
