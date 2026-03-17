@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v1.0.7] - 2026-03-17
+
+### Added
+- Add `$proxy` and `createSignalProxy()`
+
+### Deprecated
+- Fix `$signal` to be `$state` and mark `$signal` as deprecated
+
 ## [v1.0.6] - 2026-03-16
 
 ### Added

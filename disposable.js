@@ -155,7 +155,15 @@ export class DisposableComputed extends Signal.Computed {
  * @param {SignalConfig} [config]
  * @returns {Signal.State<T>}
  */
-export const $signal = (initial, config) => new DisposableState(initial, config);
+export const $state = (initial, config) => new DisposableState(initial, config);
+
+/**
+ * @deprecated since version 1.0.7. Use {@link $state} instead.
+ */
+export const $signal = (initial, config) => {
+	console.warn('`$signal` is deprecated. Please use `$state` instead.');
+	return $state(initial, config);
+};
 
 /**
  * @template T
@@ -164,3 +172,67 @@ export const $signal = (initial, config) => new DisposableState(initial, config)
  * @returns {Signal.Computed<T>}
  */
 export const $computed = (callback, config) => new DisposableComputed(callback, config);
+
+/**
+ * Creates a revocable proxy around a signal to intercept property operations and handle disposal.
+ *
+ * @template T
+ * @param {Signal.State<T>} signal - The underlying signal object.
+ * @returns {Proxy} The revocable proxy object.
+ */
+export function createSignalProxy(signal) {
+	const { proxy, revoke } = Proxy.revocable(signal, {
+		get(target, prop) {
+			return prop === Symbol.dispose ? () => {
+				revoke();
+				target[Symbol.dispose]();
+			 } : Reflect.get(target.get(), prop);
+		},
+		has(target, prop) {
+			return prop === Symbol.dispose ? true : Reflect.has(target.get(), prop);
+		},
+		set(target, prop, newValue) {
+			const obj = target.get();
+
+			if (obj[prop] !== newValue && Reflect.set(obj, prop, newValue)) {
+				target.set({ ...obj });
+				return true;
+			} else {
+				return true;
+			}
+		},
+		deleteProperty(target, property) {
+			const obj = target.get();
+
+			if (Reflect.deleteProperty(obj, property)) {
+				target.set({ ...obj });
+				return true;
+			} else {
+				return false;
+			}
+		},
+		getOwnPropertyDescriptor(target, prop) {
+			return Reflect.getOwnPropertyDescriptor(target.get(), prop);
+		},
+		ownKeys(target) {
+			return Reflect.ownKeys(target.get());
+		}
+	});
+
+	return proxy;
+}
+
+/**
+ * Initializes a signal state and returns a frozen object containing the signal, its proxy, and a dispose method.
+ *
+ * @template T
+ * @param {T} [initial={}] - The initial state properties.
+ * @param {SignalConfig} [config] - Configuration options for the underlying state.
+ * @returns {Readonly<{ signal: DisposableState<T>, proxy: Proxy, [Symbol.dispose]: Function }>}
+ */
+export function $proxy({ ...initial } = {}, config) {
+	const signal = $state(initial, config);
+	const proxy = createSignalProxy(signal);
+
+	return Object.freeze({ signal, proxy, [Symbol.dispose]: proxy[Symbol.dispose]});
+}
