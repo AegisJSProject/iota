@@ -11,3 +11,4 @@ export {
 	$open, $readOnly, $requried, $selected, $value, $data, $aria,
 } from './attr.js';
 export { IotaElement } from './iota-element.js';
+export { $html } from './html.js';

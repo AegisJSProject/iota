@@ -1,5 +1,5 @@
-import { $text, $render, $disabled, $open, $hidden, $classList, $data, $aria, $log } from '@aegisjsproject/iota';
-import { html } from '@aegisjsproject/core/parsers/html.js';
+import { $text, $disabled, $open, $hidden, $classList, $data, $aria, $log, $html } from '@aegisjsproject/iota';
+// import { html } from '@aegisjsproject/core/parsers/html.js';
 import { onInput, onClick, observeEvents, createCallback, signal as signalAttr, registerSignal } from '@aegisjsproject/callback-registry';
 // import pkg from '/package.json' with { type: 'json' }; // Wrong mime-type causes error
 import properties from '@aegisjsproject/styles/css/properties.css' with { type: 'css' };
@@ -7,7 +7,7 @@ import theme from '@aegisjsproject/styles/css/theme.css' with { type: 'css' };
 import misc from '@aegisjsproject/styles/css/misc.css' with { type: 'css' };
 import forms from '@aegisjsproject/styles/css/forms.css' with { type: 'css' };
 import btn from '@aegisjsproject/styles/css/button.css' with { type: 'css' };
-import './reactive-element.js';
+import './iota-element.js';
 
 // document.title = pkg.name;
 document.adoptedStyleSheets = [properties, theme, misc, forms, btn];
@@ -29,7 +29,7 @@ const toggleHidden = createCallback(() => $isHidden.set(! $isHidden.get()));
 stack.defer(() => $isDisabled.set(true));
 $log($name, $isHidden, $isDisabled);
 
-$render(html`
+document.getElementById('container').append($html`
 	<h1 ${$isHidden} data-test="works">Hello, ${$name}!</h1>
 	<script>${$script}</script>
 	<form id="container" ${$class}>
@@ -50,7 +50,7 @@ $render(html`
 		<p ${$desc}>The current name is <q>${$name}</q>
 		<button type="button" class="btn btn-danger" ${onClick}="${toggleOpen}"  ${$isDisabled}>Toggle</button>
 	</dialog>
-`, 'container');
+`);
 
 document.documentElement.addEventListener('command', ({ source, command }) => {
 	if (command === '--dispose') {
