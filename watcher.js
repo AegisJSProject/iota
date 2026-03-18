@@ -256,7 +256,7 @@ export const $observe = observeSignalRefs;
  * @param {ObserverConfigObject} config
  * @returns {Element|DocumentFragment}
  */
-export function $render(content, target, { stack, signal, base = document } = {}) {
+export function $render(content, target = document.body, { stack, signal, base = document } = {}) {
 	if (content instanceof HTMLTemplateElement) {
 		return $render(content.content.cloneNode(true), target, { stack, signal, base });
 	} else if (typeof target === 'string') {
