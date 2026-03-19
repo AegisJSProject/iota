@@ -1,6 +1,5 @@
 import { DisposableState, DisposableComputed } from './disposable.js';
-
-const ZERO_WIDTH_SPACE = '\u200B';
+import { ZERO_WIDTH_SPACE } from './consts.js';
 
 export class ListComputed extends DisposableComputed {
 	static REF_PREFIX = '__list_signal';
