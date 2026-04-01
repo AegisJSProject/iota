@@ -1,15 +1,15 @@
-import { $text, $disabled, $open, $hidden, $classList, $data, $aria, $log, $html } from '@aegisjsproject/iota';
-// import { html } from '@aegisjsproject/core/parsers/html.js';
+import { $text, $disabled, $open, $hidden, $classList, $data, $aria, $log, $html, $render } from '@aegisjsproject/iota';
 import { onInput, onClick, observeEvents, createCallback, signal as signalAttr, registerSignal } from '@aegisjsproject/callback-registry';
-// import pkg from '/package.json' with { type: 'json' }; // Wrong mime-type causes error
+import { css } from '@aegisjsproject/core/parsers/css.js';
+import { IotaElement} from './iota-element.js';
+import pkg from '/package.json' with { type: 'json' };
 import properties from '@aegisjsproject/styles/css/properties.css' with { type: 'css' };
 import theme from '@aegisjsproject/styles/css/theme.css' with { type: 'css' };
 import misc from '@aegisjsproject/styles/css/misc.css' with { type: 'css' };
 import forms from '@aegisjsproject/styles/css/forms.css' with { type: 'css' };
 import btn from '@aegisjsproject/styles/css/button.css' with { type: 'css' };
-import './iota-element.js';
 
-// document.title = pkg.name;
+document.title = pkg.name;
 document.adoptedStyleSheets = [properties, theme, misc, forms, btn];
 
 const stack = new DisposableStack();
@@ -25,12 +25,80 @@ const $isOpen = stack.use($open(false));
 const $script = stack.use($text('alert(location.href)'));
 const toggleOpen = createCallback(() => $isOpen.set(! $isOpen.get()));
 const toggleHidden = createCallback(() => $isHidden.set(! $isHidden.get()));
+
 // Set last, so runs first
 stack.defer(() => $isDisabled.set(true));
 $log($name, $isHidden, $isDisabled);
 
-document.getElementById('container').append($html`
+class HelloWorld extends IotaElement {
+	static shadowRootMode = 'closed';
+	#name = this.use($text('World'));
+
+	get name() {
+		return this.#name.get();
+	}
+
+	set name(val) {
+		if (typeof val === 'string' && val.length !== 0) {
+			this.#name.set(val);
+		}
+	}
+
+	get html() {
+		return $html`
+			<h2 part="greeting">Hello, ${this.#name}!</h2>
+			<button type="button" class="btn btn-danger" command="--dispose">Dispose</button>
+			<button type="button" class="btn btn-system-accent" command="--greet">Greet</button>
+			<button type="button" class="btn btn-secondary" command="--theme">Toggle Theme</button>
+		`;
+	}
+
+	get styles() {
+		return [
+			theme,
+			btn,
+			css`:host(:state(disposed)) {
+				opacity: 0.4;
+			}`,
+		];
+	}
+
+	update(type, { shadow, event }) {
+		switch(type) {
+			case 'connected':
+				shadow.querySelectorAll('.btn[command]').forEach(btn => btn.commandForElement = this);
+				break;
+
+			case 'dispose':
+				this.inert = true;
+				shadow.querySelectorAll('.btn').forEach(btn => btn.disabled = true);
+				break;
+
+			case 'eventDispatched':
+				if (event.type === 'command') {
+					switch(event.command) {
+						case '--greet':
+							alert(`Hello, ${this.#name.get()}!`);
+							break;
+
+						case '--theme':
+							this.theme = this.theme === 'dark' ? 'light' : 'dark';
+							break;
+					}
+				}
+				break;
+		}
+	}
+
+	static {
+		this.register('hello-world');
+	}
+}
+
+// Sanitizer will not allow adding `<hello-world>` directly just yet...
+$render($html`
 	<h1 ${$isHidden} data-test="works">Hello, ${$name}!</h1>
+	<p>${pkg.description}</p>
 	<script>${$script}</script>
 	<form id="container" ${$class}>
 		<div class="form-group">
@@ -48,9 +116,9 @@ document.getElementById('container').append($html`
 	<dialog ${$isOpen}>
 		<p>Lorem Ipsum</p>
 		<p ${$desc}>The current name is <q>${$name}</q>
-		<button type="button" class="btn btn-danger" ${onClick}="${toggleOpen}"  ${$isDisabled}>Toggle</button>
+		<button type="button" class="btn btn-danger" ${onClick}="${toggleOpen}" ${$isDisabled}>Toggle</button>
 	</dialog>
-`);
+`, 'container');
 
 document.documentElement.addEventListener('command', ({ source, command }) => {
 	if (command === '--dispose') {
@@ -58,6 +126,8 @@ document.documentElement.addEventListener('command', ({ source, command }) => {
 		source.disabled = true;
 	}
 }, { signal: controller.signal });
+
+document.body.append(stack.use(new HelloWorld()));
 
 // This is called for an external library.
 observeEvents();
