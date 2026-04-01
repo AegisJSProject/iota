@@ -21,11 +21,15 @@ export class IotaElement extends HTMLElement {
 
 	#internals = this.attachInternals();
 	#stack = new DisposableStack();
-	#controller = this.#stack.adopt(new AbortController(), c => c.abort(new DOMException('Element was disposed.', 'AbortError')));
+	#controller = this.#stack.adopt(
+		new AbortController(),
+		c => c.abort(new DOMException('Element was disposed.', 'AbortError'))
+	);
 	#attrChanges = new Map();
 	#updating = false;
 	#initialized = false;
 	#updateRequests = new Map();
+	#connected = Promise.withResolvers();
 
 	async connectedCallback() {
 		if (! this.#initialized) {
@@ -65,6 +69,7 @@ export class IotaElement extends HTMLElement {
 		});
 
 		this.#internals.states.add('ready');
+		this.#connected.resolve(this);
 	}
 
 	adoptedCallback() {
@@ -76,6 +81,8 @@ export class IotaElement extends HTMLElement {
 	}
 
 	async disconnectedCallback() {
+		this.#connected = Promise.withResolvers();
+
 		await this.#runUpdate('disconnected', {
 			signal: this.#controller.signal,
 			shadow: this.#shadow,
@@ -103,6 +110,18 @@ export class IotaElement extends HTMLElement {
 					attributes,
 				});
 			});
+		}
+	}
+
+	get theme() {
+		return this.getAttribute('theme') ?? 'auto';
+	}
+
+	set theme(val) {
+		if (typeof val === 'string' && val.length !== 0) {
+			this.setAttribute('theme', val);
+		} else {
+			this.removeAttribute('theme');
 		}
 	}
 
