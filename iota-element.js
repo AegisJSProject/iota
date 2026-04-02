@@ -2,6 +2,22 @@ import { html } from '@aegisjsproject/core/parsers/html.js';
 import { css } from '@aegisjsproject/core/parsers/css.js';
 import { $render } from './watcher.js';
 
+/**
+ * @type {WeakMap<Element, () => void}
+ */
+const loading = new WeakMap();
+
+const intersectionObserver = new IntersectionObserver((entries, observer) => {
+	entries.forEach(entry => {
+		if (entry.isIntersecting && loading.has(entry.target)) {
+			const resolve = loading.get(entry.target);
+			resolve();
+			loading.delete(entry.target);
+			observer.unobserve(entry.target);
+		}
+	});
+});
+
 export class IotaElement extends HTMLElement {
 	static shadowRootMode = 'open';
 	static shadowRootClonable = false;
@@ -9,6 +25,7 @@ export class IotaElement extends HTMLElement {
 	static shadowRootSerializable = false;
 	static shadowRootSlotAssignment = 'named';
 	static shadowRootReferenceTarget = null;
+	static observedAttributes = ['loading'];
 
 	#shadow = this.attachShadow({
 		mode: this.constructor.shadowRootMode,
@@ -21,6 +38,7 @@ export class IotaElement extends HTMLElement {
 
 	#internals = this.attachInternals();
 	#stack = new DisposableStack();
+	#intersecting = Promise.resolve();
 	#controller = this.#stack.adopt(
 		new AbortController(),
 		c => c.abort(new DOMException('Element was disposed.', 'AbortError'))
@@ -30,25 +48,10 @@ export class IotaElement extends HTMLElement {
 	#initialized = false;
 	#updateRequests = new Map();
 	#connected = Promise.withResolvers();
+	#connectedIter = 0;
 
 	async connectedCallback() {
-		if (! this.#initialized) {
-			this.#initialized = true;
-
-			if (this.styles instanceof CSSStyleSheet) {
-				this.#shadow.adoptedStyleSheets = [this.styles];
-			} else if (Array.isArray(this.styles)) {
-				this.#shadow.adoptedStyleSheets = this.styles;
-			} else if (typeof this.styles === 'string') {
-				this.#shadow.adoptedStyleSheets = [css`${this.styles}`];
-			}
-
-			if (this.html instanceof Node) {
-				$render(this.html, this.#shadow);
-			} else if (typeof this.html === 'string') {
-				$render(html`${this.html}`, this.#shadow);
-			}
-		}
+		const iter = ++this.#connectedIter;
 
 		if (this.#stack.disposed) {
 			this.#stack = new DisposableStack();
@@ -60,16 +63,34 @@ export class IotaElement extends HTMLElement {
 
 		// Always add this since parent class can handle events too
 		this.addEventListener('command', this, { signal: this.#controller.signal });
+
 		this.#internals.states.delete('disposed');
 
-		await this.#runUpdate('connected', {
-			signal: this.#controller.signal,
-			shadow: this.#shadow,
-			internals: this.#internals,
-		});
+		if (! this.#initialized) {
+			this.#initialized = true;
+			this.#internals.states.add('deferred');
+			this.#setStyles();
+			await this.#intersecting;
 
-		this.#internals.states.add('ready');
-		this.#connected.resolve(this);
+			if (! this.#stack.disposed && iter === this.#connectedIter) {
+				// Defer before setting content but after styles, which may set dimensions
+				this.#setContent();
+				this.#internals.states.delete('deferred');
+			}
+		}
+
+		if (this.#stack.disposed) {
+			this.#initialized = false;
+		} else if (iter === this.#connectedIter) {
+			await this.#runUpdate('connected', {
+				signal: this.#controller.signal,
+				shadow: this.#shadow,
+				internals: this.#internals,
+			});
+
+			this.#internals.states.add('ready');
+			this.#connected.resolve(this);
+		}
 	}
 
 	adoptedCallback() {
@@ -93,23 +114,45 @@ export class IotaElement extends HTMLElement {
 	}
 
 	attributeChangedCallback(name, oldValue, newValue) {
-		this.#attrChanges.set(name, { newValue, oldValue });
+		if (name === 'loading' && newValue === 'lazy') {
+			const { promise, resolve } = Promise.withResolvers();
+			loading.set(this, resolve);
+			this.#intersecting = promise;
+			intersectionObserver.observe(this);
+		} else if (name === 'loading' && loading.has(this)) {
+			const resolve = loading.get(this);
+			loading.delete(this);
+			intersectionObserver.unobserve(this);
+			resolve();
+		} else {
+			this.#attrChanges.set(name, { newValue, oldValue });
 
-		if (! this.#updating) {
-			this.#updating = true;
+			if (! this.#updating) {
+				this.#updating = true;
 
-			queueMicrotask(() => {
-				const attributes = Object.fromEntries(this.#attrChanges);
-				this.#attrChanges.clear();
-				this.#updating = false;
+				queueMicrotask(() => {
+					const attributes = Object.fromEntries(this.#attrChanges);
+					this.#attrChanges.clear();
+					this.#updating = false;
 
-				this.#runUpdate('attributeChanged', {
-					signal: this.#controller.signal,
-					shadow: this.#shadow,
-					internals: this.#internals,
-					attributes,
+					this.#runUpdate('attributeChanged', {
+						signal: this.#controller.signal,
+						shadow: this.#shadow,
+						internals: this.#internals,
+						attributes,
+					});
 				});
-			});
+			}
+		}
+	}
+
+	get loading() {
+		return this.getAttribute('loading') ?? 'auto';
+	}
+
+	set loading(val) {
+		if (typeof val === 'string' && val.length !== 0) {
+			this.setAttribute('loading', val);
 		}
 	}
 
@@ -123,6 +166,10 @@ export class IotaElement extends HTMLElement {
 		} else {
 			this.removeAttribute('theme');
 		}
+	}
+
+	get whenIntersecting() {
+		return this.#intersecting;
 	}
 
 	handleEvent(event) {
@@ -157,6 +204,15 @@ export class IotaElement extends HTMLElement {
 			shadow: this.#shadow,
 			internals: this.#internals,
 		});
+
+		if (loading.has(this)) {
+			const resolve = loading.get(this);
+			resolve();
+			intersectionObserver.unobserve(this);
+			loading.delete(this);
+			this.#intersecting = Promise.resolve();
+			this.#internals.states.delete('deferred');
+		}
 
 		this.#attrChanges.clear();
 		this.#stack.dispose();
@@ -224,6 +280,24 @@ export class IotaElement extends HTMLElement {
 			await Promise.try(() => this.update(type, context))
 				.catch(err => this.#throw(err))
 				.finally(() => stack.disposeAsync());
+		}
+	}
+
+	#setContent() {
+		if (this.html instanceof Node) {
+			$render(this.html, this.#shadow);
+		} else if (typeof this.html === 'string') {
+			$render(html`${this.html}`, this.#shadow);
+		}
+	}
+
+	#setStyles() {
+		if (this.styles instanceof CSSStyleSheet) {
+			this.#shadow.adoptedStyleSheets = [this.styles];
+		} else if (Array.isArray(this.styles)) {
+			this.#shadow.adoptedStyleSheets = this.styles;
+		} else if (typeof this.styles === 'string') {
+			this.#shadow.adoptedStyleSheets = [css`${this.styles}`];
 		}
 	}
 
