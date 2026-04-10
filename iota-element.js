@@ -1,6 +1,11 @@
 import { html } from '@aegisjsproject/core/parsers/html.js';
 import { css } from '@aegisjsproject/core/parsers/css.js';
 import { $render } from './watcher.js';
+import { reset } from '@aegisjsproject/styles/reset.js';
+import { componentBase } from '@aegisjsproject/styles/theme.js';
+import { layers } from '@aegisjsproject/styles/layers.js';
+
+const STYLES = [layers, reset, componentBase];
 
 /**
  * @type {WeakMap<Element, () => void}
@@ -58,7 +63,10 @@ export class IotaElement extends HTMLElement {
 		}
 
 		if (this.#controller.signal.aborted) {
-			this.#controller = this.#stack.adopt(new AbortController(), c => c.abort(new DOMException('Element disposed.', 'AbortError')));
+			this.#controller = this.#stack.adopt(
+				new AbortController(),
+				c => c.abort(new DOMException('Element disposed.', 'AbortError'))
+			);
 		}
 
 		// Always add this since parent class can handle events too
@@ -293,11 +301,11 @@ export class IotaElement extends HTMLElement {
 
 	#setStyles() {
 		if (this.styles instanceof CSSStyleSheet) {
-			this.#shadow.adoptedStyleSheets = [this.styles];
+			this.#shadow.adoptedStyleSheets = [...STYLES, this.styles];
 		} else if (Array.isArray(this.styles)) {
-			this.#shadow.adoptedStyleSheets = this.styles;
+			this.#shadow.adoptedStyleSheets = [...STYLES, ...this.styles];
 		} else if (typeof this.styles === 'string') {
-			this.#shadow.adoptedStyleSheets = [css`${this.styles}`];
+			this.#shadow.adoptedStyleSheets = [...STYLES, css`${this.styles}`];
 		}
 	}
 
