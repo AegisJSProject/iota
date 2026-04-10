@@ -1,9 +1,12 @@
 import { $text, $disabled, $open, $hidden, $classList, $data, $aria, $log, $html, $render, $state, $watch } from '@aegisjsproject/iota';
-import { onInput, onClick, observeEvents, createCallback, signal as signalAttr, registerSignal } from '@aegisjsproject/callback-registry';
+import { onInput, onClick, observeEvents, createCallback, signal as signalAttr, registerSignal, onChange } from '@aegisjsproject/callback-registry';
 import { el } from '@aegisjsproject/core/parsers/html.js';
 import { css } from '@aegisjsproject/core/parsers/css.js';
 import { IotaElement} from './iota-element.js';
 import pkg from '/package.json' with { type: 'json' };
+import reset from '@aegisjsproject/styles/css/reset.css' with { type: 'css' };
+import layers from '@aegisjsproject/styles/css/layers.css' with { type: 'css' };
+import presentation from '@aegisjsproject/styles/css/presentation.css' with { type: 'css' };
 import properties from '@aegisjsproject/styles/css/properties.css' with { type: 'css' };
 import theme from '@aegisjsproject/styles/css/theme.css' with { type: 'css' };
 import misc from '@aegisjsproject/styles/css/misc.css' with { type: 'css' };
@@ -11,7 +14,7 @@ import forms from '@aegisjsproject/styles/css/forms.css' with { type: 'css' };
 import btn from '@aegisjsproject/styles/css/button.css' with { type: 'css' };
 
 document.title = pkg.name;
-document.adoptedStyleSheets = [properties, theme, misc, forms, btn, css`hello-world {display: inline-block; min-height: 100px;}`];
+document.adoptedStyleSheets = [reset, layers, presentation, properties, theme, misc, forms, btn, css`hello-world {display: inline-block; min-height: 100px;}`];
 
 const stack = new DisposableStack();
 const controller = stack.adopt(new AbortController(), controller => controller.abort());
@@ -28,6 +31,9 @@ const toggleOpen = createCallback(() => $isOpen.set(! $isOpen.get()));
 const toggleHidden = createCallback(() => $isHidden.set(! $isHidden.get()));
 const themes = ['auto', 'light', 'dark'];
 const $theme = stack.use($state(themes[0]));
+const $color = $data('color', '#000');
+
+navigator.share = (...args) => Promise.try(console.log, ...args);
 
 // Set last, so runs first
 stack.defer(() => $isDisabled.set(true));
@@ -60,7 +66,6 @@ class HelloWorld extends IotaElement {
 
 	get styles() {
 		return [
-			theme,
 			btn,
 			css`:host {
 				display: inline-block;
@@ -152,12 +157,16 @@ class HelloWorld extends IotaElement {
 // Sanitizer will not allow adding `<hello-world>` directly just yet...
 $render($html`
 	<h1 ${$isHidden} data-test="works">Hello, ${$name}!</h1>
-	<p>${pkg.description}</p>
+	<p ${$color}>${pkg.description}</p>
 	<script>${$script}</script>
 	<form id="container" ${$class}>
 		<div class="form-group">
 			<label for="name" class="input-label required" ${$nameAttr}>Name</label>
 			<input type="text" id="name" class="input" name="name" placeholder="Enter your name" ${onInput}="${createCallback($name.handleEvent)}"  ${signalAttr}="${signal}" ${$isDisabled} required="" />
+		</div>
+		<div class="form-group">
+			<label for="color" class="input-label required">Pick a Color</label>
+			<input type="color" id="color" class="input" value="${$color.get()}" ${onChange}="${({ target }) => target.validity.valid && $color.set(target.value)}" ${signalAttr}="${signal}" ${$isDisabled} />
 		</div>
 		<div>
 			<button type="reset" class="btn btn-warning" ${$isDisabled}>Reset</button>
