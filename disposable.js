@@ -1,6 +1,6 @@
 import { Signal } from '@shgysk8zer0/signals';
 import { getRef } from './refs.js';
-import { registerSignal, unregisterSignal } from './registry.js';
+import { registerSignal } from './registry.js';
 
 /**
  * @typedef SignalConfig
@@ -32,7 +32,7 @@ export class DisposableState extends Signal.State {
 		});
 
 		registerSignal(this.#ref, this);
-		this.#ref.defer(() => unregisterSignal(this.#ref));
+		// this.#ref.defer(() => unregisterSignal(this.#ref));
 		this.handleEvent = this.handleEvent.bind(this);
 	}
 
@@ -62,14 +62,14 @@ export class DisposableState extends Signal.State {
 	}
 
 	[Symbol.dispose]() {
-		if (! this.#ref.disposed) {
-			this.#ref.dispose();
-
+		if (! this.disposed) {
 			Signal.subtle.introspectSinks(this).forEach(sink => {
 				if (sink instanceof Signal.subtle.Watcher) {
 					sink.unwatch(this);
 				}
 			});
+
+			this.#ref.dispose();
 		}
 	}
 
@@ -105,7 +105,7 @@ export class DisposableComputed extends Signal.Computed {
 		});
 
 		registerSignal(this.#ref, this);
-		this.#ref.defer(() => unregisterSignal(this.#ref));
+		// this.#ref.defer(() => unregisterSignal(this.#ref));
 	}
 
 	/**
@@ -130,13 +130,14 @@ export class DisposableComputed extends Signal.Computed {
 	}
 
 	[Symbol.dispose]() {
-		if (! this.#ref.disposed) {
-			this.#ref[Symbol.dispose]();
+		if (! this.disposed) {
 			Signal.subtle.introspectSinks(this).forEach(sink => {
 				if (sink instanceof Signal.subtle.Watcher) {
 					sink.unwatch(this);
 				}
 			});
+
+			this.#ref[Symbol.dispose]();
 		}
 	}
 
