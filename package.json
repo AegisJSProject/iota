@@ -76,9 +76,9 @@
   },
   "homepage": "https://github.com/AegisJSProject/iota#readme",
   "dependencies": {
-    "@aegisjsproject/core": "^0.2.34",
+    "@aegisjsproject/core": "^0.3.0",
     "@aegisjsproject/escape": "^1.0.4",
-    "@shgysk8zer0/signals": "^0.0.3"
+    "@shgysk8zer0/signals": "^0.1.0"
   },
   "devDependencies": {
     "@aegisjsproject/dev-server": "^1.0.6",
